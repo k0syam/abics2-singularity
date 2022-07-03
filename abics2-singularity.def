@@ -1,0 +1,75 @@
+Bootstrap: docker
+From: python:3.8.13
+
+%labels
+    Author k0syam
+    Version v0.0.1
+
+%files
+    # bind the files
+
+%environment
+    export PATH=/opt/q-e-qe-7.0/bin:$PATH
+    export PATH=/opt/aenet/aenet-2.0.4/bin:$PATH
+    export PESUDODIR=/opt/SSSP_efficiency_pseudos
+
+%post
+    export QEVERSION=7.0
+    export AENETVERSION=2.0.4
+    ### install required components available in apt
+    apt update -y
+    apt upgrade -y
+    apt install -y build-essential libopenblas-dev libblas-dev liblapack-dev liblapack3 gfortran libglfw3-dev libglew-dev
+    apt install -y libopenmpi-dev openmpi-bin
+    apt install -y libssl-dev git wget zip unzip
+    apt install -y parallel
+
+    #### install python, not used
+    #export PYTHON_VERSION=3.9.13
+    #cd /tmp
+    #wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz
+    #tar xzvf Python-${PYTHON_VERSION}.tgz
+    #cd Python-${PYTHON_VERSION}
+    #./configure
+    #make
+    #make install
+
+    ### install qe
+    cd /opt
+    wget https://github.com/QEF/q-e/archive/refs/tags/qe-${QEVERSION}.zip
+    unzip qe-${QEVERSION}.zip
+    cd q-e-qe-${QEVERSION}
+    ./configure
+    make all
+    make install
+
+    ### install SSSP (pseudopotentials)
+    cd /opt
+    wget https://www.materialscloud.org/discover/data/discover/sssp/downloads/SSSP_efficiency_pseudos.tar.gz
+    tar xzvf SSSP_efficiency_pseudos.tar.gz
+
+    ### install aenet
+    cd /opt
+    mkdir aenet
+    cd aenet
+    wget https://github.com/atomisticnet/aenet/archive/refs/tags/v${AENETVERSION}.zip
+    unzip v${AENETVERSION}.zip
+    cd aenet-${AENETVERSION}/lib
+    make
+    cd ../src
+    make -f makefiles/Makefile.gfortran_openblas_serial
+    pip install Cython
+    pip install numpy scipy
+    pip install pymatgen ase
+    cd ../python3
+    python setup.py install
+
+    ### install abICS
+    pip install abics
+
+%runscript
+    # run the example
+    ls
+
+%help
+    ...
